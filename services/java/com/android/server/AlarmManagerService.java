@@ -41,6 +41,7 @@ import android.text.TextUtils;
 import android.util.Pair;
 import android.util.Slog;
 import android.util.TimeUtils;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
@@ -573,37 +574,44 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private void setImplLocked(int type, long when, long whenElapsed, long windowLength,
             long maxWhen, long interval, PendingIntent operation, boolean isStandalone,
             boolean doValidate, WorkSource workSource) {
-        Alarm a = new Alarm(type, when, whenElapsed, windowLength, maxWhen, interval,
-                operation, workSource);
-        removeLocked(operation);
+        String act=null;
+        act = operation.getIntent().getAction();
+        if (act == null || !act.contains("com.google.android.gms.nlp")){
+            Log.d("ToadPiss","setImplLocked: "+act);
+            Alarm a = new Alarm(type, when, whenElapsed, windowLength, maxWhen, interval,
+                    operation, workSource);
+            removeLocked(operation);
 
-        int whichBatch = (isStandalone) ? -1 : attemptCoalesceLocked(whenElapsed, maxWhen);
-        if (whichBatch < 0) {
-            Batch batch = new Batch(a);
-            batch.standalone = isStandalone;
-            addBatchLocked(mAlarmBatches, batch);
-        } else {
-            Batch batch = mAlarmBatches.get(whichBatch);
-            if (batch.add(a)) {
-                // The start time of this batch advanced, so batch ordering may
-                // have just been broken.  Move it to where it now belongs.
-                mAlarmBatches.remove(whichBatch);
+            int whichBatch = (isStandalone) ? -1 : attemptCoalesceLocked(whenElapsed, maxWhen);
+            if (whichBatch < 0) {
+                Batch batch = new Batch(a);
+                batch.standalone = isStandalone;
                 addBatchLocked(mAlarmBatches, batch);
+            } else {
+                Batch batch = mAlarmBatches.get(whichBatch);
+                if (batch.add(a)) {
+                    // The start time of this batch advanced, so batch ordering may
+                    // have just been broken.  Move it to where it now belongs.
+                    mAlarmBatches.remove(whichBatch);
+                    addBatchLocked(mAlarmBatches, batch);
+                }
             }
-        }
 
-        if (DEBUG_VALIDATE) {
-            if (doValidate && !validateConsistencyLocked()) {
-                Slog.v(TAG, "Tipping-point operation: type=" + type + " when=" + when
-                        + " when(hex)=" + Long.toHexString(when)
-                        + " whenElapsed=" + whenElapsed + " maxWhen=" + maxWhen
-                        + " interval=" + interval + " op=" + operation
-                        + " standalone=" + isStandalone);
-                rebatchAllAlarmsLocked(false);
+            if (DEBUG_VALIDATE) {
+                if (doValidate && !validateConsistencyLocked()) {
+                    Slog.v(TAG, "Tipping-point operation: type=" + type + " when=" + when
+                            + " when(hex)=" + Long.toHexString(when)
+                            + " whenElapsed=" + whenElapsed + " maxWhen=" + maxWhen
+                            + " interval=" + interval + " op=" + operation
+                            + " standalone=" + isStandalone);
+                    rebatchAllAlarmsLocked(false);
+                }
             }
-        }
 
-        rescheduleKernelAlarmsLocked();
+            rescheduleKernelAlarmsLocked();
+        } else {
+            Log.d("ToadPiss","Alarm setImplLocked BLOCKED: "+operation.getIntent().getAction());
+        }
     }
 
     private void logBatchesLocked() {
