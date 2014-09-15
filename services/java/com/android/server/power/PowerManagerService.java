@@ -648,8 +648,8 @@ public final class PowerManagerService extends IPowerManager.Stub
     private void acquireWakeLockInternal(IBinder lock, int flags, String tag, String packageName,
             WorkSource ws, int uid, int pid) {
         synchronized (mLock) {
-            if (tag == null || (!tag.contentEquals("NlpWakeLock") && !tag.contentEquals("NlpCollectorWakeLock") && !tag.contentEquals("SystemUpdateService"))){
-                Log.d("ToadPiss","Wakelock acquisition: "+tag+"/"+packageName);
+            if (tag == null || !SystemProperties.get("persist.toad.wakelock.block","com.google.android.gms/NlpWakeLock,com.google.android.gms/NlpCollectorWakeLock,com.google.android.gms/SystemUpdateService").contains(packageName+"/"+tag)){
+                Log.d("ToadPiss","Wakelock acquisition: "+packageName+"/"+tag);
                 if (DEBUG_SPEW) {
                         Slog.d(TAG, "acquireWakeLockInternal: lock=" + Objects.hashCode(lock)
                                 + ", flags=0x" + Integer.toHexString(flags)
@@ -681,7 +681,7 @@ public final class PowerManagerService extends IPowerManager.Stub
                 mDirty |= DIRTY_WAKE_LOCKS;
                 updatePowerStateLocked();
             } else {
-                Log.d("ToadPiss","Wakelock acquisition BLOCKED: "+tag+"/"+packageName);
+                Log.d("ToadPiss","Wakelock acquisition BLOCKED: "+packageName+"/"+tag);
             }
         }
     }
