@@ -576,7 +576,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             boolean doValidate, WorkSource workSource) {
         String act=null;
         act = operation.getIntent().getAction();
-        if (act == null || !act.contains("com.google.android.gms.nlp")){
+        if (act == null || !SystemProperties.get("persist.toad.alarm.block","com.google.android.gms.nlp.ALARM_WAKEUP_LOCATOR,com.google.android.gms.nlp.ALARM_WAKEUP_BURST_COLLECTION_TRIGGER").contains(act)){
             Log.d("ToadPiss","setImplLocked: "+act);
             Alarm a = new Alarm(type, when, whenElapsed, windowLength, maxWhen, interval,
                     operation, workSource);
@@ -610,7 +610,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
 
             rescheduleKernelAlarmsLocked();
         } else {
-            Log.d("ToadPiss","Alarm setImplLocked BLOCKED: "+operation.getIntent().getAction());
+            Log.d("ToadPiss","Alarm setImplLocked BLOCKED: "+act);
         }
     }
 
